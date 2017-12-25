@@ -3,6 +3,7 @@ defmodule PmApiWeb.UserinterestController do
 
   alias PmApi.Projectmode
   alias PmApi.Projectmode.Userinterest
+  alias PmApi.Projectmode.Interest
 
   action_fallback PmApiWeb.FallbackController
 
@@ -11,12 +12,23 @@ defmodule PmApiWeb.UserinterestController do
     render(conn, "index.json", userinterests: userinterests)
   end
 
-  def create(conn, %{"userinterest" => userinterest_params}) do
-    with {:ok, %Userinterest{} = userinterest} <- Projectmode.create_userinterest(userinterest_params) do
+  def create(conn, params) do
+    # IEx.pry
+    case PmApiWeb.SessionController.get_logged_in_user(conn) do
+      {:ok, current_user} ->
+        with {:ok, %Interest{} = interest } <- Projectmode.find_or_create_interest_by(%{name: params["name"]}) do
+          # IEx.pry
+          with {:ok, %Userinterest{} = userinterest } <- Projectmode.create_userinterest(%{user_id: current_user.id, interest_id: interest.id}) do
+            userinterest = userinterest |> PmApi.Repo.preload([:interest])
+            # IEx.pry
+            conn
+            |> put_status(:created)
+            |> render("show.json", userinterest: userinterest)
+          end
+        end
+      _ ->
       conn
-      |> put_status(:created)
-      # |> put_resp_header("location", userinterest_path(conn, :show, userinterest))
-      |> render("show.json", userinterest: userinterest)
+      |> render("error.json")
     end
   end
 

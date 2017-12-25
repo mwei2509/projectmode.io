@@ -1,8 +1,12 @@
+require IEx
 defmodule PmApiWeb.UserroleController do
   use PmApiWeb, :controller
 
   alias PmApi.Projectmode
   alias PmApi.Projectmode.Userrole
+  alias PmApi.Projectmode.Role
+  alias PmApi.Projectmode.User
+  alias PmApiWeb.Guardian
 
   action_fallback PmApiWeb.FallbackController
 
@@ -11,12 +15,39 @@ defmodule PmApiWeb.UserroleController do
     render(conn, "index.json", userroles: userroles)
   end
 
-  def create(conn, %{"userrole" => userrole_params}) do
-    with {:ok, %Userrole{} = userrole} <- Projectmode.create_userrole(userrole_params) do
-      conn
-      |> put_status(:created)
-      # |> put_resp_header("location", userrole_path(conn, :show, userrole))
-      |> render("show.json", userrole: userrole)
+  # def create(conn, params) do
+  #   case PmApiWeb.SessionController.get_logged_in_user(conn) do
+  #     {:ok, current_user} ->
+  #       with {:ok, %Role{} = role } <- Projectmode.find_or_create_role_by(%{type: params["type"]}) do
+  #         with {:ok, %Userrole{} = userrole } <- Projectmode.create_userrole(%{user_id: current_user.id, role_id: role.id}) do
+  #           conn
+  #           |> put_status(:created)
+  #           |> render("show.json", userrole: userrole)
+  #         end
+  #       end
+  #     _ ->
+  #     conn
+  #     |> render("error.json")
+  #   end
+  # end
+
+  def create(conn, params) do
+    # IEx.pry
+    case PmApiWeb.SessionController.get_logged_in_user(conn) do
+      {:ok, current_user} ->
+        with {:ok, %Role{} = role } <- Projectmode.find_or_create_role_by(%{type: params["type"]}) do
+          # IEx.pry
+          with {:ok, %Userrole{} = userrole } <- Projectmode.create_userrole(%{user_id: current_user.id, role_id: role.id}) do
+            userrole = userrole |> PmApi.Repo.preload([:role])
+            # IEx.pry
+            conn
+            |> put_status(:created)
+            |> render("show.json", userrole: userrole)
+          end
+        end
+      _ ->
+        conn
+        |> render("error.json")
     end
   end
 

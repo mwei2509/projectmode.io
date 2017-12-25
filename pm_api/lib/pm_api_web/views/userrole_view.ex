@@ -11,6 +11,10 @@ defmodule PmApiWeb.UserroleView do
   end
 
   def render("userrole.json", %{userrole: userrole}) do
-    %{id: userrole.id}
+    userrole = userrole |> PmApi.Repo.preload([:role])
+    %{
+      id: userrole.id,
+      type: userrole.role.type
+    }
   end
 end

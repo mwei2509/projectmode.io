@@ -6,6 +6,7 @@ defmodule PmApi.Projectmode.Role do
 
   schema "roles" do
     field :type, :string
+    many_to_many :users, PmApi.Projectmode.User, join_through: "userroles"
 
     timestamps()
   end
@@ -15,5 +16,6 @@ defmodule PmApi.Projectmode.Role do
     role
     |> cast(attrs, [:type])
     |> validate_required([:type])
+    |> unique_constraint(:type)
   end
 end

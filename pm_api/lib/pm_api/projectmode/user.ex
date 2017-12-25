@@ -11,6 +11,11 @@ defmodule PmApi.Projectmode.User do
     field :password, :string, virtual: true
     field :password_hash, :string
     field :tagline, :string
+    has_many :userroles, PmApi.Projectmode.Userrole
+    has_many :userskills, PmApi.Projectmode.Userskill
+    has_many :userinterests, PmApi.Projectmode.Userinterest
+    many_to_many :roles, PmApi.Projectmode.Role, join_through: "userroles"
+    many_to_many :skills, PmApi.Projectmode.Skill, join_through: "userskills"
 
     timestamps()
   end
@@ -19,6 +24,7 @@ defmodule PmApi.Projectmode.User do
   def changeset(%User{} = user, attrs) do
     user
     |> cast(attrs, [:email, :firstname, :lastname, :tagline])
+    # |> cast_assoc([:roles, :skills])
     |> validate_required([:email, :firstname, :lastname])
     |> unique_constraint(:email)
   end

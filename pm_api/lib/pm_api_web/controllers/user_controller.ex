@@ -1,8 +1,11 @@
+require IEx
 defmodule PmApiWeb.UserController do
+  import Plug.Conn
   use PmApiWeb, :controller
 
   alias PmApi.Projectmode
   alias PmApi.Projectmode.User
+  alias PmApiWeb.Guardian
 
   action_fallback PmApiWeb.FallbackController
 
@@ -12,11 +15,21 @@ defmodule PmApiWeb.UserController do
   end
 
   def create(conn, %{"user" => user_params}) do
-    with {:ok, %User{} = user} <- Projectmode.create_user(user_params) do
-      conn
-      |> put_status(:created)
-      |> put_resp_header("location", user_path(conn, :show, user))
-      |> render("show.json", user: user)
+    # changeset = User.registration_changeset(%User{}, user_params)
+
+    case Projectmode.create_user(user_params) do
+      {:ok, user} ->
+        user = user |> PmApi.Repo.preload([:userroles, :userskills, :userinterests])
+        new_conn = Guardian.Plug.sign_in(conn, user)
+        jwt = Guardian.Plug.current_token(new_conn)
+
+        new_conn
+        |> put_status(:created)
+        |> render(PmApiWeb.SessionView, "show.json", user: user, jwt: jwt)
+      {:error, changeset} ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> render(PmApiWeb.ChangesetView, "error.json", changeset: changeset)
     end
   end
 
@@ -26,10 +39,22 @@ defmodule PmApiWeb.UserController do
   end
 
   def update(conn, %{"id" => id, "user" => user_params}) do
-    user = Projectmode.get_user!(id)
-
-    with {:ok, %User{} = user} <- Projectmode.update_user(user, user_params) do
-      render(conn, "show.json", user: user)
+    # user = Projectmode.get_user!(id)
+    #
+    # with {:ok, %User{} = user} <- Projectmode.update_user(user, user_params) do
+    #   render(conn, "show.json", user: user)
+    # end
+    IEx.pry
+    case PmApiWeb.SessionController.get_logged_in_user(conn) do
+      {:ok, user} ->
+        with {:ok, %User{} = user } <- Projectmode.update_user(user, user_params) do
+          conn
+          |> put_status(:ok)
+          |> render("show.json", user: user)
+        end
+      _ ->
+        conn
+        |> render("error.json")
     end
   end
 

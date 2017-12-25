@@ -11,6 +11,10 @@ defmodule PmApiWeb.UserinterestView do
   end
 
   def render("userinterest.json", %{userinterest: userinterest}) do
-    %{id: userinterest.id}
+    userinterest = userinterest |> PmApi.Repo.preload([:interest])
+    %{
+      id: userinterest.id,
+      name: userinterest.interest.name
+    }
   end
 end

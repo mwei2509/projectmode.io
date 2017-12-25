@@ -22,11 +22,15 @@ config :logger, :console,
   format: "$time $metadata[$level] $message\n",
   metadata: [:request_id]
 
-config :guardian, Guardian,
-  issuer: "ProjectModeApi",
-  ttl: {30, :days},
-  verify_issuer: true,
-  serializer: PmApi.GuardianSerializer
+config :pm_api, PmApiWeb.Guardian,
+  issuer: "pm_api",
+  secret_key: "NrtUkUtVQ/OL8q/s3yxck9KGgsLXUvXgRejXJTMncu+xkiK85BpTm2icEggNYvXX"
+
+# config :guardian, Guardian,
+#   issuer: "ProjectModeApi",
+#   ttl: {30, :days},
+#   verify_issuer: true,
+#   serializer: PmApi.GuardianSerializer
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

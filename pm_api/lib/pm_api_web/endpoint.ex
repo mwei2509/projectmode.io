@@ -38,6 +38,9 @@ defmodule PmApiWeb.Endpoint do
     key: "_pm_api_key",
     signing_salt: "zNvbKHVt"
 
+  plug CORSPlug
+    # headers: [:token, :authorization]
+
   plug PmApiWeb.Router
 
   @doc """
